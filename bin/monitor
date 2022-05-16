@@ -28,8 +28,8 @@ def open_resource(resource: str) -> Iterator[Resource]:
         rm = ResourceManager()
         inst = rm.open_resource(resource)
         yield inst
-    except KeyboardInterrupt:
-        pass
+    except Exception as error:
+        raise error
     finally:
         inst.close()
         rm.close()
@@ -50,9 +50,7 @@ def plot_data(data: bytes, ax: Axes) -> None:
         f.seek(0)
 
         ax.clear()
-        ax.imshow(imread(f, "png"))
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
+        ax.imshow(imread(f, IMG_FORMAT))
 
 
 def main() -> None:
@@ -64,10 +62,16 @@ def main() -> None:
 
     with open_resource(resource) as inst:
         fig, ax = plt.subplots()
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_visible(False)
 
         while True:
-            plot_data(get_data(inst), ax)
-            plt.pause(interval=1)
+            try:
+                plot_data(get_data(inst), ax)
+                plt.pause(interval=1)
+            except KeyboardInterrupt:
+                plt.close()
+                break
 
 
 if __name__ == "__main__":
