@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+
+
+# standard library
+import os
+import sys
+from contextlib import contextmanager
+from tempfile import TemporaryFile
+from typing import Iterator
+
+
+# dependencies
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.image import imread
+from pyvisa import Resource, ResourceManager
+
+
+# constants
+IMG_PATH = "E:/monitor.png"
+IMG_FORMAT = "png"
+
+
+# runtime functions
+@contextmanager
+def open_resource(resource: str) -> Iterator[Resource]:
+    try:
+        rm = ResourceManager()
+        inst = rm.open_resource(resource)
+        yield inst
+    except Exception as error:
+        raise error
+    finally:
+        inst.close()
+        rm.close()
+
+
+def get_data(inst: Resource) -> bytes:
+    inst.write(f'FILESystem:DELEte "{IMG_PATH}"')
+    inst.write(f'SAVE:IMAGe "{IMG_PATH}"')
+    inst.query("*OPC?")
+    inst.write(f'FILESystem:READFile "{IMG_PATH}"')
+
+    return inst.read_raw()
+
+
+def plot_data(data: bytes, ax: Axes) -> None:
+    with TemporaryFile() as f:
+        f.write(data)
+        f.seek(0)
+
+        ax.clear()
+        ax.imshow(imread(f, IMG_FORMAT))
+
+
+def main() -> None:
+    resource = os.environ.get("VISA_RESOURCE")
+
+    if resource is None:
+        print("$VISA_RESOURCE is not set!")
+        sys.exit(1)
+
+    with open_resource(resource) as inst:
+        fig, ax = plt.subplots()
+        fig.subplots_adjust(0, 0, 1, 1, 0, 0)
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_visible(False)
+
+        while True:
+            try:
+                plot_data(get_data(inst), ax)
+                plt.pause(interval=1)
+            except KeyboardInterrupt:
+                plt.close()
+                break
+
+
+if __name__ == "__main__":
+    main()
