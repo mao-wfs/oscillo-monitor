@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "oscillo-monitor"
+version = "0.1.0"
+description = "Monitoring an oscilloscope display using VISA API"
+authors = ["Akio Taniguchi <taniguchi@a.phys.nagoya-u.ac.jp>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+matplotlib = "^3.5"
+pyusb = "^1.2"
+pyvisa = "^1.12"
+pyvisa-py = "^0.5"
+
+[tool.poetry.dev-dependencies]
+black = "^22.3"
+ipython = "^8.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
